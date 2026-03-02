@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইসলামিক এআই সহকারী</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a1f0a;
+            --bg-secondary: #0d2818;
+            --bg-card: rgba(20, 60, 35, 0.6);
+            --accent-gold: #d4af37;
+            --accent-gold-light: #f4d03f;
+            --text-primary: #f5f5f0;
+            --text-secondary: #a8c4a0;
+            --border-color: rgba(212, 175, 55, 0.3);
+            --glow-gold: rgba(212, 175, 55, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans Bengali', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .font-amiri { font-family: 'Amiri', serif; }
+
+        /* Background & Particles (Same as before) */
+        .pattern-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; opacity: 0.15; background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30z' fill='none' stroke='%23d4af37' stroke-width='0.5'/%3E%3Ccircle cx='30' cy='30' r='10' fill='none' stroke='%23d4af37' stroke-width='0.3'/%3E%3C/svg%3E"); }
+        .particle { position: fixed; width: 4px; height: 4px; background: var(--accent-gold); border-radius: 50%; pointer-events: none; opacity: 0; animation: particleFloat 8s ease-in-out infinite; z-index: 1; }
+        @keyframes particleFloat { 0% { opacity: 0; transform: translateY(100vh) scale(0); } 10% { opacity: 0.8; } 90% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-100px) scale(1); } }
+
+        /* Form & Container Styles (Condensed for brevity, same logic) */
+        .welcome-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 31, 10, 0.95); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.8s ease, visibility 0.8s ease; }
+        .welcome-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .welcome-form-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1.5rem; padding: 2.5rem; width: 90%; max-width: 450px; box-shadow: 0 0 50px rgba(0,0,0,0.5); text-align: center; }
+        .form-icon { width: 70px; height: 70px; background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%); border-radius: 50%; margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px var(--glow-gold); }
+        .form-icon svg { width: 40px; height: 40px; fill: var(--bg-primary); }
+        .form-title { font-size: 1.75rem; color: var(--accent-gold); margin-bottom: 0.5rem; text-shadow: 0 0 15px var(--glow-gold); }
+        .form-subtitle { color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; }
+        .form-group { margin-bottom: 1.25rem; text-align: left; }
+        .form-label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem; }
+        .form-input, .form-select { width: 100%; padding: 0.85rem 1rem; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 0.75rem; color: var(--text-primary); font-size: 1rem; font-family: inherit; transition: all 0.3s ease; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
+        .checkbox-group { display: flex; align-items: center; gap: 0.75rem; margin-top: 1.5rem; cursor: pointer; user-select: none; }
+        .checkbox-input { display: none; }
+        .checkbox-custom { width: 22px; height: 22px; border: 2px solid var(--accent-gold); border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+        .checkbox-input:checked + .checkbox-custom { background: var(--accent-gold); }
+        .checkbox-custom svg { width: 14px; height: 14px; fill: var(--bg-primary); opacity: 0; transform: scale(0); transition: all 0.2s ease; }
+        .checkbox-input:checked + .checkbox-custom svg { opacity: 1; transform: scale(1); }
+        .checkbox-label { color: var(--text-secondary); font-size: 0.9rem; }
+        .form-submit-btn { width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%); border: none; border-radius: 0.75rem; color: var(--bg-primary); font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; margin-top: 1rem; font-family: inherit; }
+        .form-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--glow-gold); }
+
+        /* Main Container */
+        .main-container { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(180deg, var(--bg-secondary) 0%, transparent 100%); padding: 1.5rem; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+        .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 900px; margin: 0 auto; width: 100%; }
+        .logo-container { display: flex; align-items: center; gap: 1rem; }
+        .logo-icon { width: 50px; height: 50px; background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px var(--glow-gold); animation: logoPulse 3s ease-in-out infinite; }
+        @keyframes logoPulse { 0%, 100% { box-shadow: 0 0 20px var(--glow-gold); } 50% { box-shadow: 0 0 40px var(--glow-gold), 0 0 60px rgba(212, 175, 55, 0.2); } }
+        .logo-icon svg { width: 30px; height: 30px; fill: var(--bg-primary); }
+        .header-title { font-size: 1.5rem; font-weight: 700; color: var(--accent-gold); text-shadow: 0 0 20px var(--glow-gold); }
+        .reset-btn { background: rgba(212, 175, 55, 0.1); border: 1px solid var(--border-color); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; font-family: inherit; display: flex; align-items: center; gap: 0.5rem; }
+        .reset-btn:hover { background: rgba(212, 175, 55, 0.2); color: var(--accent-gold); }
+        .reset-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        
+        /* Chat Area */
+        .chat-container { flex: 1; max-width: 900px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; padding: 1rem; }
+        .messages-area { flex: 1; overflow-y: auto; padding: 1rem 0; display: flex; flex-direction: column; gap: 1rem; scroll-behavior: smooth; }
+        .message { display: flex; gap: 0.75rem; animation: messageSlide 0.5s ease-out; max-width: 85%; }
+        @keyframes messageSlide { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .message.assistant .message-avatar { background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%); }
+        .message.user .message-avatar { background: linear-gradient(135deg, #2d5a3d 0%, #3d7a4d 100%); }
+        .message-avatar svg { width: 20px; height: 20px; }
+        .message.assistant .message-avatar svg { fill: var(--bg-primary); }
+        .message.user .message-avatar svg { fill: var(--text-primary); }
+        .message-content { background: var(--bg-card); border-radius: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--border-color); backdrop-filter: blur(10px); }
+        .message.user .message-content { background: linear-gradient(135deg, rgba(45, 90, 61, 0.8) 0%, rgba(61, 122, 77, 0.6) 100%); }
+        .message-text { line-height: 1.7; font-size: 0.95rem; }
+        .message-time { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; opacity: 0.7; }
+
+        /* Arabic Text Style */
+        .arabic-text { font-family: 'Amiri', serif; font-size: 1.5rem; text-align: right; direction: rtl; margin-bottom: 0.5rem; color: var(--accent-gold-light); line-height: 1.9; }
+        .bangla-pronunciation { font-style: italic; color: var(--text-secondary); margin-bottom: 0.25rem; font-size: 0.9rem; }
+        .bangla-meaning { color: var(--text-primary); }
+
+        /* Typing & Input */
+        .typing-indicator { display: none; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--bg-card); border-radius: 1rem; border: 1px solid var(--border-color); width: fit-content; }
+        .typing-indicator.active { display: flex; }
+        .typing-dot { width: 8px; height: 8px; background: var(--accent-gold); border-radius: 50%; animation: typingBounce 1.4s ease-in-out infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+        .quick-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem; background: var(--bg-card); border-radius: 1rem; border: 1px solid var(--border-color); margin-bottom: 0.75rem; }
+        .quick-btn { background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(244, 208, 63, 0.1) 100%); border: 1px solid var(--border-color); color: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; font-family: inherit; }
+        .quick-btn:hover { background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(244, 208, 63, 0.2) 100%); transform: translateY(-2px); }
+        .input-area { background: var(--bg-card); border-radius: 1.5rem; border: 1px solid var(--border-color); padding: 0.75rem; display: flex; gap: 0.75rem; align-items: flex-end; backdrop-filter: blur(10px); margin-top: auto; }
+        .input-field { flex: 1; background: transparent; border: none; color: var(--text-primary); font-size: 1rem; font-family: inherit; resize: none; max-height: 120px; line-height: 1.5; padding: 0.5rem; }
+        .input-field:focus { outline: none; }
+        .send-btn { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-light) 100%); border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; flex-shrink: 0; }
+        .send-btn:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--glow-gold); }
+        .send-btn svg { width: 22px; height: 22px; fill: var(--bg-primary); }
+        
+        .welcome-section { text-align: center; padding: 2rem; animation: fadeInUp 1s ease-out; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .welcome-title { font-size: 2rem; font-weight: 700; color: var(--accent-gold); margin-bottom: 0.5rem; text-shadow: 0 0 30px var(--glow-gold); }
+        .welcome-arabic { font-size: 1.75rem; color: var(--accent-gold-light); margin-bottom: 1rem; opacity: 0.9; }
+        .welcome-text { color: var(--text-secondary); font-size: 1rem; max-width: 500px; margin: 0 auto; line-height: 1.7; }
+        .decorative-line { width: 100px; height: 2px; background: linear-gradient(90deg, transparent, var(--accent-gold), transparent); margin: 1.5rem auto; }
+        .footer { text-align: center; padding: 1rem; color: var(--text-secondary); font-size: 0.8rem; border-top: 1px solid var(--border-color); background: var(--bg-secondary); }
+
+        @media (max-width: 640px) {
+            .form-card { padding: 1.5rem; }
+            .welcome-title { font-size: 1.5rem; }
+            .reset-btn span { display: none; }
+            .arabic-text { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pattern-bg"></div>
+    <div id="particles"></div>
+
+    <!-- WELCOME FORM OVERLAY -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <div class="welcome-form-card">
+            <div class="form-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+            </div>
+            <h2 class="form-title">আপনাকে স্বাগতম</h2>
+            <p class="form-subtitle">চ্যাট শুরু করতে আপনার তথ্য দিন</p>
+            <form id="userDetailsForm">
+                <div class="form-group">
+                    <label class="form-label">আপনার নাম</label>
+                    <input type="text" id="inputName" class="form-input" placeholder="যেমন: আহমেদ" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">আপনার বয়স</label>
+                    <input type="number" id="inputAge" class="form-input" placeholder="যেমন: ২৫" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">আপনার ধর্ম</label>
+                    <select id="inputReligion" class="form-input" required>
+                        <option value="" disabled selected>নির্বাচন করুন</option>
+                        <option value="ইসলাম">ইসলাম</option>
+                        <option value="খ্রিস্টান">খ্রিস্টান</option>
+                        <option value="হিন্দু">হিন্দু</option>
+                        <option value="বৌদ্ধ">বৌদ্ধ</option>
+                        <option value="অন্যান্য">অন্যান্য</option>
+                    </select>
+                </div>
+                <label class="checkbox-group">
+                    <input type="checkbox" class="checkbox-input" id="rememberMe" checked>
+                    <div class="checkbox-custom"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+                    <span class="checkbox-label">আমাকে মনে রাখুন</span>
+                </label>
+                <button type="submit" class="form-submit-btn">চ্যাট শুরু করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-container">
+                    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+                    <h1 class="header-title">ইসলামিক এআই সহকারী</h1>
+                </div>
+                <button class="reset-btn" onclick="clearUserData()" title="নতুন ইউজার হিসেবে লগইন করুন">
+                    <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                    <span>প্রোফাইল পরিবর্তন</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="chat-container">
+            <div class="messages-area" id="messagesArea">
+                <div class="welcome-section" id="welcomeSection" style="display: none;">
+                    <p class="welcome-arabic font-amiri">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+                    <h2 class="welcome-title" id="dynamicWelcomeTitle">আসসালামু আলাইকুম</h2>
+                    <div class="decorative-line"></div>
+                    <p class="welcome-text" id="dynamicWelcomeText">আমি আপনার ইসলামিক সহকারী।</p>
+                </div>
+            </div>
+
+            <div class="message assistant" id="typingMessage" style="display: none;">
+                <div class="message-avatar"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+                <div class="typing-indicator active"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+            </div>
+
+            <div class="quick-actions" id="quickActions">
+                <button class="quick-btn" onclick="sendQuickMessage('সূরা ফাতিহা')">সূরা ফাতিহা</button>
+                <button class="quick-btn" onclick="sendQuickMessage('সূরা ইখলাস')">সূরা ইখলাস</button>
+                <button class="quick-btn" onclick="sendQuickMessage('নামাজের নিয়ম')">নামাজের নিয়ম</button>
+                <button class="quick-btn" onclick="sendQuickMessage('আয়াতুল কুরসি')">আয়াতুল কুরসি</button>
+            </div>
+
+            <div class="input-area">
+                <textarea class="input-field" id="userInput" placeholder="আপনার প্রশ্ন লিখুন..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+                <button class="send-btn" onclick="sendMessage()" aria-label="পাঠান"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+            </div>
+        </div>
+        <footer class="footer">ইসলামিক এআই সহকারী - জ্ঞান অর্জনে সহযোগিতা</footer>
+    </div>
+
+    <script>
+        // --- Configuration & Variables ---
+        const STORAGE_KEY = 'islamic_ai_user_data';
+        let currentUser = { name: '', age: '', religion: '' };
+        
+        // DOM Elements
+        const welcomeOverlay = document.getElementById('welcomeOverlay');
+        const userDetailsForm = document.getElementById('userDetailsForm');
+        const messagesArea = document.getElementById('messagesArea');
+        const userInput = document.getElementById('userInput');
+        const typingMessage = document.getElementById('typingMessage');
+        const welcomeSection = document.getElementById('welcomeSection');
+        const dynamicWelcomeTitle = document.getElementById('dynamicWelcomeTitle');
+        const dynamicWelcomeText = document.getElementById('dynamicWelcomeText');
+
+        // --- COMPREHENSIVE KNOWLEDGE BASE ---
+        const knowledgeBase = {
+            // Creator Info
+            'ক্রিয়েটর': `আসসালামু আলাইকুম! আমার বস, ক্রিয়েটর এবং ডেভেলপারের নাম মোহাম্মদ মুন্না খান।`,
+
+            // Surahs
+            'সূরা ফাতিহা': `<div class="arabic-text">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ ۝ اَلْحَمْدُ لِلّٰهِ رَبِّ الْعٰلَمِيْنَ ۝ الرَّحْمٰنِ الرَّحِيْمِ ۝ مٰلِكِ يَوْمِ الدِّيْنِ ۝ اِيَّاكَ نَعْبُدُ وَاِيَّاكَ نَسْتَعِيْنُ ۝ اِهْدِنَا الصِّرَاطَ الْمُسْتَقِيْمَ ۝ صِرَاطَ الَّذِيْنَ اَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوْبِ عَلَيْهِمْ وَلَا الضَّآلِّيْنَ ۝</div>
+<div class="bangla-pronunciation">বিসমিল্লাহির রাহমানির রাহিম। আলহামদুলিল্লাহি রাব্বিল আলামিন। আর রাহমানির রাহিম। মালিকি ইয়াউমিদ্দিন। ইয়্যাকা নাবুদু ওয়া ইয়্যাকা নাসতাইন। ইহদিনাস সিরাতাল মুসতাকিম। সিরাতাল্লাযিনা আনআমতা আলাইহিম, গাইরিল মাগদুবি আলাইহিম ওয়ালাদ দোয়াল্লিন।</div>
+<div class="bangla-meaning">পরম করুণাময় অসীম দয়ালু আল্লাহর নামে শুরু। সমস্ত প্রশংসা আল্লাহর জন্য যিনি সকল সৃষ্টির প্রতিপালক। যিনি পরম করুণাময়, অসীম দয়ালু। বিচার দিনের মালিক। আমরা শুধু তোমারই ইবাদত করি এবং তোমারই কাছে সাহায্য চাই। আমাদের সরল পথ দেখাও। তাদের পথ যাদের তুমি নিয়ামত দিয়েছ, তাদের পথ নয় যারা অভিশপ্ত এবং পথভ্রষ্ট।</div>`,
+
+            'সূরা ইখলাস': `<div class="arabic-text">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ ۝ قُلْ هُوَ اللهُ اَحَدٌ ۝ اَللهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُوْلَدْ ۝ وَلَمْ يَكُنْ لَّه كُفُوًا اَحَدٌ ۝</div>
+<div class="bangla-pronunciation">বিসমিল্লাহির রাহমানির রাহিম। কুল হুওয়াল্লাহু আহাদ। আল্লাহুস সামাদ। লাম ইয়ালিদ ওয়া লাম ইউলাদ। ওয়া লাম ইয়াকুল্লাহু কুফুওয়ান আহাদ।</div>
+<div class="bangla-meaning">পরম করুণাময় অসীম দয়ালু আল্লাহর নামে শুরু। বলুন, তিনি আল্লাহ, এক। আল্লাহ অমুখাপেক্ষী। তিনি কাউকে জন্ম দেননি এবং তাঁকেও জন্ম দেওয়া হয়নি। এবং তাঁর সমকক্ষ কেউ নেই।</div>`,
+
+            'সূরা ফলাক': `<div class="arabic-text">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ ۝ قُلْ اَعُوْذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ اِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ اِذَا حَسَدَ ۝</div>
+<div class="bangla-pronunciation">বিসমিল্লাহির রাহমানির রাহিম। কুল আউযু বিরাব্বিল ফালাক। মিন শাররি মা খালাক। ওয়া মিন শাররি গাসিকিন ইযা ওয়াকাব। ওয়া মিন শাররিন নাফফাসাতি ফিল উকাদ। ওয়া মিন শাররি হাসিদিন ইযা হাসাদ।</div>
+<div class="bangla-meaning">পরম করুণাময় অসীম দয়ালু আল্লাহর নামে শুরু। বলুন, আমি আশ্রয় চাই ভোরের রবের কাছে। তিনি যা সৃষ্টি করেছেন তার অনিষ্ট থেকে। এবং রাত্রির অন্ধকার থেকে, যখন তা গভীর হয়। এবং গিঁটে ফুঁক দানকারিনীদের অনিষ্ট থেকে। এবং হিংসুকের অনিষ্ট থেকে, যখন সে হিংসা করে।</div>`,
+
+            'সূরা নাস': `<div class="arabic-text">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ ۝ قُلْ اَعُوْذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ اِلٰهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِيْ يُوَسْوِسُ فِيْ صُدُوْرِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ ۝</div>
+<div class="bangla-pronunciation">বিসমিল্লাহির রাহমানির রাহিম। কুল আউযু বিরাব্বিন নাস। মালিকিন নাস। ইলাহিন নাস। মিন শাররিল ওয়াসওয়াসিল খান্নাস। আল্লাযী ইউওয়াসউইসু ফী সুদূরিন নাস। মিনাল জিন্নাতি ওয়ান নাস।</div>
+<div class="bangla-meaning">পরম করুণাময় অসীম দয়ালু আল্লাহর নামে শুরু। বলুন, আমি আশ্রয় চাই মানুষের রবের কাছে। মানুষের অধিপতির কাছে। মানুষের উপাস্যের কাছে। কুমন্ত্রণাদাতা, আত্মগোপনকারীর অনিষ্ট থেকে। যে মানুষের অন্তরে কুমন্ত্রণা দেয়। জিন ও মানুষের মধ্য থেকে।</div>`,
+
+            'সূরা আসর': `<div class="arabic-text">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ ۝ وَالْعَصْرِ ۝ اِنَّ الْاِنْسَانَ لَفِيْ خُسْرٍ ۝ اِلَّا الَّذِيْنَ اٰمَنُوْا وَعَمِلُوا الصّٰلِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ ۝</div>
+<div class="bangla-meaning">কসম কালের। নিশ্চয় মানুষ ক্ষতিগ্রস্ত। তবে তারা ছাড়া যারা ঈমান এনেছে, সৎকাজ করেছে, পরস্পরকে সত্যের উপদেশ দিয়েছে এবং ধৈর্যের উপদেশ দিয়েছে।</div>`,
+
+            'সূরা কাউসার': `<div class="arabic-text">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ ۝ اِنَّا اَعْطَيْنَاكَ الْكَوْثَرَ ۝ فَصَلِّ لِرَبِّكَ وَانْحَرْ ۝ اِنَّ شَانِئَكَ هُوَ الْاَبْتَرُ ۝</div>
+<div class="bangla-meaning">নিশ্চয় আমি আপনাকে কাউসার দান করেছি। অতএব আপনি আপনার রবের উদ্দেশ্যে নামাজ আদায় করুন ও কোরবানি দিন। নিশ্চয় আপনার শত্রু, সে-ই নিঃসন্তান।</div>`,
+
+            'আয়াতুল কুরসি': `<div class="arabic-text">اَللهُ لَا اِلٰهَ اِلَّا هُوَ الْحَيُّ الْقَيُّوْمُ ۚ لَا تَاْخُذُه سِنَةٌ وَّلَا نَوْمٌ ۚ لَه مَا فِي السَّمٰوَاتِ وَمَا فِي الْاَرْضِ ۗ مَنْ ذَا الَّذِيْ يَشْفَعُ عِنْدَهٗ اِلَّا بِاِذْنِهٖ ۗ يَعْلَمُ مَا بَيْنَ اَيْدِيْهِمْ وَمَا خَلْفَهُمْ ۚ وَلَا يُحِيْطُوْنَ بِشَيْءٍ مِّنْ عِلْمِهٖ اِلَّا بِمَا شَاءَ ۚ وَسِعَ كُرْسِيُّهُ السَّمٰوَاتِ وَالْاَرْضَ ۚ وَلَا يَـئُوْدُه حِفْظُهُمَا ۚ وَهُوَ الْعَلِيُّ الْعَظِيْمُ</div>
+<div class="bangla-meaning">আল্লাহ, তিনি ছাড়া কোনো উপাস্য নেই, তিনি চিরঞ্জীব, সবকিছুর ধারক। তাঁকে তন্দ্রা বা নিদ্রা স্পর্শ করে না। নভোমণ্ডল ও ভূমণ্ডলের সবকিছু তাঁরই। তাঁর অনুমতি ব্যতীত কে তাঁর নিকট সুপারিশ করবে? তাদের সামনে ও পেছনে যা আছে তিনি তা জানেন। তিনি যা ইচ্ছা তা ছাড়া তাঁর জ্ঞানের কোনো বিষয়ই তারা আয়ত্ত করতে পারে না। তাঁর কুরসি আসমান ও যমীনকে পরিবেষ্টন করে আছে। এ দুটির রক্ষণাবেক্ষণ তাঁর পক্ষে কষ্টকর নয়। তিনি সমুন্নত, মহান।</div>`,
+
+            // Basic Islam
+            'ইসলামের পাঁচ স্তম্ভ': `ইসলামের পাঁচটি মৌলিক স্তম্ভ:
+১. <b>কালেমা:</b> আল্লাহ ছাড়া কোনো ইলাহ নেই এবং মুহাম্মদ (সা.) তাঁর রাসূল - এই সাক্ষ্য দেওয়া।
+২. <b>নামাজ:</b> দিনে পাঁচ ওয়াক্ত নামাজ আদায় করা।
+৩. <b>রোজা:</b> রমজান মাসে ফরজ রোজা রাখা।
+৪. <b>জাকাত:</b> সামর্থ্য অনুযায়ী সম্পদের জাকাত আদায় করা।
+৫. <b>হজ্জ:</b> সামর্থ্য থাকলে জীবনে একবার বায়তুল্লাহ শরীফে হজ্জ আদায় করা।`,
+
+            'ইমানের অঙ্গ': `ইমানের ছয়টি অঙ্গ বা মৌলিক বিশ্বাস:
+১. আল্লাহতে বিশ্বাস।
+২. ফেরেশতায় বিশ্বাস।
+৩. আসমানি কিতাবে বিশ্বাস।
+৪. নবী-রাসূলে বিশ্বাস।
+৫. আখেরাতে বিশ্বাস।
+৬. তাকদীরে বিশ্বাস।`,
+
+            'নামাজের নিয়ম': `নামাজের শর্তসমূহ:
+১. শরীর, কাপড় ও স্থান পবিত্র হওয়া।
+২. সতর ঢেকে রাখা।
+৩. কিবলামুখ হওয়া।
+৪. সময় হওয়া।
+
+নামাজের ফরজসমূহ (১৪টি):
+<b>নামাজের বাইরের ফরজ (৭টি):</b> ওযু, পবিত্রতা, সতর, কিবলা, সময়, নিয়ত, তাকবীরে তাহরীমা।
+<b>নামাজের ভেতরের ফরজ (৭টি):</b> কিরাত, রুকু, সিজদা, কায়াম, বৈঠক, খুশু, সালাম।`,
+
+            'ওযুর নিয়ম': `ওযুর ফরজ (৪টি):
+১. মুখমন্ডল ধোয়া।
+২. দুই হাত কনুই সহ ধোয়া।
+৩. মাথার একাংশ মসেহ করা।
+৪. দুই পা টাখনু সহ ধোয়া।
+
+ওযুর সুন্নত: নিয়ত, বিসমিল্লাহ পড়া, মেসওয়াক করা, তিনবার ধোয়া, খিলাল করা।`,
+
+            // Duas
+            'ঘুমানোর দোয়া': `<div class="arabic-text">بِاسْمِكَ اللّٰهُمَّ اَمُوْتُ وَاَحْيَا</div>
+<div class="bangla-pronunciation">বিসমিকা আল্লাহুম্মা আমুতু ওয়া আহইয়া।</div>
+<div class="bangla-meaning">হে আল্লাহ! আপনার নামে মরি এবং বেঁচে থাকি।</div>`,
+
+            'ঘর থেকে বের হওয়ার দোয়া': `<div class="arabic-text">بِسْمِ اللهِ تَوَكَّلْتُ عَلَى اللهِ وَلَا حَوْلَ وَلَا قُوَّةَ اِلَّا بِاللهِ</div>
+<div class="bangla-pronunciation">বিসমিল্লাহি তাওয়াক্কালতু আলাল্লাহি ওয়ালা হাওলা ওয়ালা কুওয়াতা ইল্লা বিল্লাহ।</div>
+<div class="bangla-meaning">আল্লাহর নামে শুরু করছি, আল্লাহর ওপর ভরসা করলাম। আল্লাহর সাহায্য ছাড়া পাপ থেকে বাঁচা এবং পুণ্য করার ক্ষমতা কারো নেই।</div>`,
+
+            'খাওয়ার দোয়া': `<div class="arabic-text">بِسْمِ اللهِ وَعَلٰى بَرَكَةِ اللهِ</div>
+<div class="bangla-pronunciation">বিসমিল্লাহি ওয়া আলা বারাকাতিল্লাহ।</div>
+<div class="bangla-meaning">আল্লাহর নামে শুরু করছি এবং আল্লাহর বরকতের উপর নির্ভর করছি।</div>`,
+            
+            'মসজিদে প্রবেশের দোয়া': `<div class="arabic-text">اَللّٰهُمَّ افْتَحْ لِيْ اَبْوَابَ رَحْمَتِكَ</div>
+<div class="bangla-meaning">হে আল্লাহ! আমার জন্য আপনার রহমতের দরজাসমূহ খুলে দিন।</div>`,
+
+            // Lifestyle
+            'হালাল হারাম': `ইসলামে হালাল ও হারামের সুস্পষ্ট বিধান রয়েছে।
+<b>হারাম:</b> শূকর, মৃত প্রাণী, রক্ত, আল্লাহর নাম ছাড়া জবাই করা প্রাণী, মদ ও নেশাজাতীয় দ্রব্য।
+<b>হালাল:</b> আল্লাহর নামে সঠিক নিয়মে জবাই করা পশু (গরু, ছাগল, উট, মুরগি ইত্যাদি)।`,
+
+            'মা বাবার হক': `মা-বাবার হক অত্যন্ত গুরুত্বপূর্ণ। কুরআনে আল্লাহ বলেন: "তোমার পালনকর্তা আদেশ দিয়েছেন যে, তাঁ ছাড়া অন্য কারও ইবাদত করবে না এবং পিতা-মাতার সাথে সদ্ব্যবহার করবে।"
+হাদিসে এসেছে: "জান্নাত মায়ের পায়ের নিচে।" অর্থাৎ মায়ের সন্তুষ্টি জান্নাত লাভের পথ।`,
+
+            'জাকাতের হিসাব': `জাকাত ফরজ হওয়ার শর্ত: নিসাব পরিমাণ সম্পদ (স্বর্ণ ৭.৫ তোলা বা রূপা ৫২.৫ তোলা বা সমতুল্য অর্থ) এক চান্দ্র বছর পূর্ণ থাকা।
+হার: ২.৫% (চল্লিশ ভাগের এক ভাগ)।`
+        };
+
+        // --- Logic Functions ---
+
+        function checkSavedUser() {
+            const savedData = localStorage.getItem(STORAGE_KEY);
+            if (savedData) {
+                currentUser = JSON.parse(savedData);
+                welcomeOverlay.classList.add('hidden');
+                initializeChat();
+            } else {
+                welcomeOverlay.classList.remove('hidden');
+            }
+        }
+
+        userDetailsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentUser.name = document.getElementById('inputName').value;
+            currentUser.age = document.getElementById('inputAge').value;
+            currentUser.religion = document.getElementById('inputReligion').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (rememberMe) localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser));
+            else localStorage.removeItem(STORAGE_KEY);
+
+            welcomeOverlay.classList.add('hidden');
+            setTimeout(() => { initializeChat(); }, 800);
+        });
+
+        function clearUserData() {
+            localStorage.removeItem(STORAGE_KEY);
+            currentUser = { name: '', age: '', religion: '' };
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputAge').value = '';
+            document.getElementById('inputReligion').value = '';
+            welcomeOverlay.classList.remove('hidden');
+            messagesArea.innerHTML = '';
+            welcomeSection.style.display = 'none';
+        }
+
+        function initializeChat() {
+            dynamicWelcomeTitle.innerText = `আসসালামু আলাইকুম, ${currentUser.name}`;
+            let greetingText = `আপনার বয়স ${currentUser.age} বছর এবং আপনি ${currentUser.religion} ধর্মের অনুসারী। আমি আপনার ইসলামিক সহকারী। সূরা, নামাজ, ওযু, দোয়া বা যেকোনো বিষয়ে জানতে প্রশ্ন করুন।`;
+            
+            if (currentUser.religion !== 'ইসলাম') {
+                greetingText = `ধন্যবাদ ${currentUser.name}, আপনি ${currentUser.religion} ধর্মের অনুসারী। ইসলাম সম্পর্কে জানতে আমি সাহায্য করতে প্রস্তুত।`;
+            }
+            dynamicWelcomeText.innerText = greetingText;
+            welcomeSection.style.display = 'block';
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isUser ? 'user' : 'assistant');
+            const avatarIcon = isUser 
+                ? '<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+                : '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
+
+            messageDiv.innerHTML = 
+                '<div class="message-avatar">' + avatarIcon + '</div>' +
+                '<div class="message-content">' +
+                    '<div class="message-text">' + content + '</div>' +
+                    '<div class="message-time">' + getCurrentTime() + '</div>' +
+                '</div>';
+
+            messagesArea.appendChild(messageDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function findResponse(query) {
+            query = query.toLowerCase().trim();
+            let response = '';
+
+            // Creator check
+            const creatorKeywords = ['creator', 'developer', 'ক্রিয়েটর', 'ডেভেলপার', 'কে বানিয়েছে', 'তোমার বস', 'বস কে', 'owner', 'মুন্না'];
+            for (let i = 0; i < creatorKeywords.length; i++) {
+                if (query.includes(creatorKeywords[i])) {
+                    response = knowledgeBase['ক্রিয়েটর'];
+                    return personalizeResponse(response);
+                }
+            }
+
+            // Knowledge base check
+            for (const key in knowledgeBase) {
+                if (query.includes(key.toLowerCase())) {
+                    response = knowledgeBase[key];
+                    return personalizeResponse(response);
+                }
+            }
+
+            // Keyword Synonyms
+            const keywords = {
+                'নামাজ': knowledgeBase['নামাজের নিয়ম'],
+                'সলাত': knowledgeBase['নামাজের নিয়ম'],
+                'স্তম্ভ': knowledgeBase['ইসলামের পাঁচ স্তম্ভ'],
+                'পাঁচ স্তম্ভ': knowledgeBase['ইসলামের পাঁচ স্তম্ভ'],
+                'ইমান': knowledgeBase['ইমানের অঙ্গ'],
+                'ওযু': knowledgeBase['ওযুর নিয়ম'],
+                'পবিত্রতা': knowledgeBase['ওযুর নিয়ম'],
+                'ফাতিহা': knowledgeBase['সূরা ফাতিহা'],
+                'ইখলাস': knowledgeBase['সূরা ইখলাস'],
+                'ফলাক': knowledgeBase['সূরা ফলাক'],
+                'নাস': knowledgeBase['সূরা নাস'],
+                'আসর': knowledgeBase['সূরা আসর'],
+                'কাউসার': knowledgeBase['সূরা কাউসার'],
+                'কুরসি': knowledgeBase['আয়াতুল কুরসি'],
+                'ঘুম': knowledgeBase['ঘুমানোর দোয়া'],
+                'খাওয়া': knowledgeBase['খাওয়ার দোয়া'],
+                'মসজিদ': knowledgeBase['মসজিদে প্রবেশের দোয়া'],
+                'বের': knowledgeBase['ঘর থেকে বের হওয়ার দোয়া'],
+                'হালাল': knowledgeBase['হালাল হারাম'],
+                'হারাম': knowledgeBase['হালাল হারাম'],
+                'মা': knowledgeBase['মা বাবার হক'],
+                'বাবা': knowledgeBase['মা বাবার হক'],
+                'জাকাত': knowledgeBase['জাকাতের হিসাব']
+            };
+
+            for (const keyword in keywords) {
+                if (query.includes(keyword)) {
+                    response = keywords[keyword];
+                    return personalizeResponse(response);
+                }
+            }
+
+            response = `দুঃখিত, আমি এই নির্দিষ্ট প্রশ্নের উত্তর খুঁজে পাইনি। অনুগ্রহ করে অন্য ভাষায় বা অন্য কিছু জিজ্ঞাসা করুন। আপনি জিজ্ঞাসা করতে পারেন: নামাজের নিয়ম, সূরা ফাতিহা, ওযুর ফরজ ইত্যাদি।`;
+            return personalizeResponse(response);
+        }
+
+        function personalizeResponse(text) {
+            if (!currentUser.name) return text;
+            const greetings = [ `${currentUser.name}, `, `জাযাকাল্লাহু খাইরান ${currentUser.name}!\n\n`, `${currentUser.name}, আপনার উত্তর নিচে দেওয়া হলো:\n\n` ];
+            const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+            // Check if text starts with HTML tag (like div for Arabic)
+            if (text.trim().startsWith('<div') || text.startsWith('আসসালামু')) return text;
+            return randomGreeting + text;
+        }
+
+        function showTyping() { typingMessage.style.display = 'flex'; messagesArea.scrollTop = messagesArea.scrollHeight; }
+        function hideTyping() { typingMessage.style.display = 'none'; }
+
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            addMessage(message, true);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            showTyping();
+            setTimeout(function() { hideTyping(); const response = findResponse(message); addMessage(response, false); }, 1000);
+        }
+
+        function sendQuickMessage(message) { userInput.value = message; sendMessage(); }
+        function handleKeyDown(event) { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); } }
+        userInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 120) + 'px'; });
+
+        // Initialize
+        createParticles();
+        checkSavedUser();
+
+    </script>
+</body>
+</html>
